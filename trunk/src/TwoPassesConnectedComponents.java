@@ -17,7 +17,8 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 	public TwoPassesConnectedComponents(WritableRaster wr)
 	{
 		this.wr = wr;
-		this.wrOut = null;
+		this.color = new int[3];
+		this.wrOut = wr;
 		this.nextLable = 1;
 	}
 	
@@ -27,12 +28,12 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 		{
 			for(int c = 0; c < this.wr.getHeight(); c++)
 			{
-				this.wr.getPixel(c, l, this.color);
+				this.color = this.wr.getPixel(c, l, this.color);
 				int cValue = this.color[0];					//img mono cromatica rgb sao iguais
 				if(cValue > this.background)
 				{
 					cValue = this.checkNeighbors(c, l);
-					if(cValue == 0)
+					if(cValue == 0)							//se preto guarda preto na imagem de saida
 					{
 						this.color [0] = this.nextLable;
 						this.color [1] = this.nextLable;
@@ -40,81 +41,72 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 						this.wrOut.setPixel(c, l, this.color);
 						
 						this.nextLable++;
-						
+						for(int i : this.color)				//print teste
+						{
+							System.out.print(i);
+							
+						}
+						System.out.print(" " );	
 					}
-					else
+					else{
+						
 					this.color [0] = cValue;
 					this.color [1] = cValue;
 					this.color [2] = cValue;
 					this.wrOut.setPixel(c, l, this.color);
+					for(int i : this.color)				//print teste
+					{
+						System.out.print(i);
+						
+					}System.out.print(" ");}
 				}
-				else
+				else{
 					this.color [0] = this.background;
 					this.color [1] = this.background;
 					this.color [2] = this.background;
 					this.wrOut.setPixel(l, c, this.color);
+					for(int i : this.color)				//print teste
+					{
+						System.out.print(i);
+						
+					}System.out.print(" ");
 			}
-		}
+			}
+		}System.out.println();
 	}
 	
 	public int checkNeighbors(int x, int y)
 	{	
-		int max = 0;
-		this.wr.getPixel(x - 1, y, this.color);
-		if(this.color[0] > max)
+		int min = Integer.MAX_VALUE;
+		if(x>0){
+		this.color = this.wr.getPixel(x - 1, y, this.color);
+		if(this.color[0] < min)
 		{
-			max =this.color[0];
-		}
-		this.wr.getPixel(x + 1, y - 1, this.color);
-		if(this.color[0] > max)
+			
+			min = this.color[0];
+		}}
+		if(y>0){
+		if(x<this.wr.getWidth())
+		this.color = this.wr.getPixel(x + 1, y - 1, this.color);
+		if(this.color[0] < min)
 		{
-			max =this.color[0];
+			min = this.color[0];
 		}
-		this.wr.getPixel(x, y - 1, this.color);
-		if(this.color[0] > max)
+		
+		this.color = this.wr.getPixel(x, y - 1, this.color);
+		if(this.color[0] < min)
 		{
-			max =this.color[0];
+			min = this.color[0];
 		}
-		this.wr.getPixel(x - 1, y - 1, this.color);
-		if(this.color[0] > max)
+		if(x>0)
+		this.color = this.wr.getPixel(x - 1, y - 1, this.color);
+		if(this.color[0] < min)
 		{
-			max =this.color[0];
+			min = this.color[0];
 		}
-		return max;
+		}
+		return min;
 	}
 	
-	/*algorithm TwoPass(data)
-	   linked = []
-	   labels = structure with dimensions of data, initialized with the value of Background
-	   
-	   First pass
-	   
-	   for row in data:
-	       for column in row:
-	           if data[row][col] is not Background
-	               
-	               neighbors = connected elements with the current element's label
-	               
-	               if neighbors is empty
-	                   linked[NextLabel] = set containing NextLabel                    
-	                   labels[row][column] = NextLabel
-	                   NextLabel += 1
-	               
-	               else
-	                   
-	                   Find the smallest label
-	                   
-	                   L = neighbors labels
-	                   labels[row][column] = min(L)
-	                   for label in L
-	                       linked[label] = union(linked[label], L)
-	   
-	   Second pass
-	   
-	   for row in data
-	       for column in row
-	           if labels[row][column] is not Background		
-	               labels[row][column] = min(linked[labels[row][column]])     
-	      
-	   return labels*/
+	
 }
