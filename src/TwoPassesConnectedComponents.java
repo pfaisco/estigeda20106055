@@ -24,16 +24,18 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 	
 	public void firstPass()
 	{
-		for(int l = 0; l < this.wr.getWidth(); l++)
+		System.out.println(this.wr.getHeight()+" "+this.wr.getWidth());
+		for(int l = 0; l < this.wr.getHeight(); l++)
 		{
-			for(int c = 0; c < this.wr.getHeight(); c++)
+			for(int c = 0; c < this.wr.getWidth(); c++)
 			{
 				this.color = this.wr.getPixel(c, l, this.color);
 				int cValue = this.color[0];					//img mono cromatica rgb sao iguais
+				
 				if(cValue > this.background)
 				{
 					cValue = this.checkNeighbors(c, l);
-					if(cValue == 0)							//se preto guarda preto na imagem de saida
+					if(cValue == 0)							// novo pixel sem vizinhos
 					{
 						this.color [0] = this.nextLable;
 						this.color [1] = this.nextLable;
@@ -48,7 +50,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 						}
 						System.out.print(" " );	
 					}
-					else{
+					else{								//com vizinhos
 						
 					this.color [0] = cValue;
 					this.color [1] = cValue;
@@ -60,7 +62,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 						
 					}System.out.print(" ");}
 				}
-				else{
+				else{									// qnd preto fica preto na imagem de saida
 					this.color [0] = this.background;
 					this.color [1] = this.background;
 					this.color [2] = this.background;
@@ -71,41 +73,42 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 						
 					}System.out.print(" ");
 			}
-			}
-		}System.out.println();
+			}System.out.println("//");
+		}
 	}
 	
-	public int checkNeighbors(int x, int y)
-	{	
+	public int checkNeighbors(int x, int y) {
 		int min = Integer.MAX_VALUE;
-		if(x>0){
-		this.color = this.wr.getPixel(x - 1, y, this.color);
-		if(this.color[0] < min)
-		{
-			
-			min = this.color[0];
-		}}
-		if(y>0){
-		if(x<this.wr.getWidth())
-		this.color = this.wr.getPixel(x + 1, y - 1, this.color);
-		if(this.color[0] < min)
-		{
-			min = this.color[0];
-		}
 		
-		this.color = this.wr.getPixel(x, y - 1, this.color);
-		if(this.color[0] < min)
-		{
-			min = this.color[0];
+		if (x > 0 && y > 0) {
+			this.color = this.wr.getPixel(x - 1, y, this.color);
+			if (this.color[0] < min && this.color[0] != 0) {
+
+				min = this.color[0];
+			}
 		}
-		if(x>0)
-		this.color = this.wr.getPixel(x - 1, y - 1, this.color);
-		if(this.color[0] < min)
-		{
-			min = this.color[0];
+		if (y > 0 && x < this.wr.getWidth()-1) {
+			this.color = this.wr.getPixel(x + 1, y - 1, this.color);
+			if (this.color[0] < min && this.color[0] != 0) {
+				min = this.color[0];
+			}
 		}
+		if (y > 0){
+			this.color = this.wr.getPixel(x, y - 1, this.color);
+			if (this.color[0] < min && this.color[0] != 0) {
+				min = this.color[0];
+			}
 		}
-		return min;
+		if (x > 0 && y>0){
+			this.color = this.wr.getPixel(x - 1, y - 1, this.color);
+			if (this.color[0] < min && this.color[0] != 0) {
+				min = this.color[0];
+			}
+		}
+		if(min == Integer.MAX_VALUE)
+			return 0;
+		else 
+			return min;
 	}
 	
 	
