@@ -44,13 +44,13 @@ public class ImageOperations {
         }
     }
 
-//    public int getWidth(){
-//        return bImg.getWidth();
-//    }
-//
-//    public int getHeight(){
-//        return bImg.getHeight();
-//    }
+    public int getWidth(){
+        return bImg.getWidth();
+    }
+
+    public int getHeight(){
+        return bImg.getHeight();
+    }
 
     public void binarization(int th){
         int red, green, blue;
@@ -68,7 +68,7 @@ public class ImageOperations {
                 
                 nivel_cinzento = (int) ((red + green + blue) / 3.0);
                 
-                if(nivel_cinzento > th){
+                if(nivel_cinzento < th){
                 	
                 	color[0] = 0xff;
                     color[1] = 0xff;
