@@ -31,7 +31,12 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 			{
 				this.color = this.wr.getPixel(c, l, this.color);
 				int cValue = this.color[0];					//img mono cromatica rgb sao iguais
-				
+//				System.out.print("orginal- ");
+//				for(int i : this.color)				//print teste
+//				{
+//					System.out.print(i+";");
+//					
+//				}System.out.print(" ");
 				if(cValue > this.background)
 				{
 					cValue = this.checkNeighbors(c, l);
@@ -76,6 +81,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 			}System.out.println("//");
 		}
 	}
+	 
 	
 	public int checkNeighbors(int x, int y) {
 		int min = Integer.MAX_VALUE;
@@ -110,6 +116,8 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 		else 
 			return min;
 	}
-	
+	public void addToEquivalents(){
+		
+	}
 	
 }
