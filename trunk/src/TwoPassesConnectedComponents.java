@@ -86,7 +86,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents{
 	public int checkNeighbors(int x, int y) {
 		int min = Integer.MAX_VALUE;
 		
-		if (x > 0 && y > 0) {
+		if (x > 0) {
 			this.color = this.wr.getPixel(x - 1, y, this.color);
 			if (this.color[0] < min && this.color[0] != 0) {
 
