@@ -38,7 +38,7 @@ public class ImageOperations {
         File ficheiro;
         ficheiro = new File(nome_ficheiro);
         try {
-        	ImageIO.write(this.bImg, "jpg", ficheiro);
+        	ImageIO.write(this.bImg, "bmp", ficheiro);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
