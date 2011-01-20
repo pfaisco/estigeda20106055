@@ -1,6 +1,7 @@
 package src;
 
 import java.awt.image.WritableRaster;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Random;
@@ -12,6 +13,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 	private final int background = 0x00;
 	private LinkedList<HashSet<Integer>> listaEquivalencias;
 	private int nextLable;
+	private HashMap<Integer, Integer> conjuntos;
 
 	public TwoPassesConnectedComponents(WritableRaster wr) {
 		this.wr = wr;
@@ -19,68 +21,65 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 		this.wrOut = wr;
 		this.nextLable = 1;
 		this.listaEquivalencias = new LinkedList<HashSet<Integer>>();
+		this.conjuntos = new HashMap<Integer, Integer>();
+	}
+
+	public void marcarPixel(int c, int l, int[] marca) {
+		this.wrOut.setPixel(c, l, marca);
+	}
+
+	public void marcarPixel(int c, int l, int marca) {
+
+		this.color[0] = marca;
+		this.color[1] = marca;
+		this.color[2] = marca;
+		this.wrOut.setPixel(c, l, this.color);
+
+	}
+
+	public void adicionaConjunto(int[] marca) {
+		for (int i = 0; i < 4; i++) {
+			if (marca[i] > 0 && marca[i] != marca[5])
+				this.conjuntos.put(marca[i], marca[4]);
+		}
 	}
 
 	public void firstPass() {
-		System.out.println(this.wr.getWidth() + " " + this.wr.getHeight());
-		for (int l = 0; l < this.wr.getHeight(); l++) {
-			for (int c = 0; c < this.wr.getWidth(); c++) {
+
+		for (int l = 1; l < this.wr.getHeight() - 1; l++) {
+			for (int c = 1; c < this.wr.getWidth() - 1; c++) {
 				this.color = this.wr.getPixel(c, l, this.color);
 				int cValue = this.color[0]; // img mono cromatica rgb sao iguais
-				// System.out.print("orginal- ");
-				// for(int i : this.color) //print teste
-				// {
-				// System.out.print(i+";");
-				//
-				// }System.out.print(" ");
-				if (cValue > this.background) {
-					cValue = this.checkNeighbors(c, l);
-					if (cValue == 0) // novo pixel sem vizinhos
-					{
-						this.color[0] = this.nextLable;
-						this.color[1] = this.nextLable;
-						this.color[2] = this.nextLable;
-						this.wrOut.setPixel(c, l, this.color);
+				int[] vizinhos = this.checkNeighbors(c, l);
 
+				if (cValue > this.background) {
+
+					if (vizinhos[5] < 1) // vizinhos[5] = numero de vizinhos
+											// maior q zero
+					{
+						this.marcarPixel(c, l, this.nextLable);
 						this.nextLable++;
-//						for (int i : this.color) // print teste
-//						{
-//							System.out.print(i);
-//						}
-//						System.out.print(" ");
+
 					} else { // com vizinhos
 
-						this.color[0] = cValue;
-						this.color[1] = cValue;
-						this.color[2] = cValue;
-						this.wrOut.setPixel(c, l, this.color);
-//						for (int i : this.color) // print teste
-//						{
-//							System.out.print(i);
-//						}
-//						System.out.print(" ");
+						this.marcarPixel(c, l, vizinhos[4]);// vizinhos[4]=
+															// marca mais baixa
+
+						if (vizinhos[5] > 1) {
+							this.marcarPixel(c, l, vizinhos[4]);// vizinhos[4]=
+																// marca mais
+																// baixa
+							this.adicionaConjunto(vizinhos);
+						}
 					}
 				} else { // qnd preto fica preto na imagem de saida
-					this.color[0] = this.background;
-					this.color[1] = this.background;
-					this.color[2] = this.background;
-					this.wrOut.setPixel(c, l, this.color);
-//					for (int i : this.color) // print teste
-//					{
-//						System.out.print(i);
-//					}
-//					System.out.print(" ");
+					this.marcarPixel(c, l, this.background);
 				}
-				// System.out.println(c + " " + l);
-			}
-//			System.out.println("//");
+				System.out.print(color[0]);
+			}System.out.println("!!");
+
 		}
-		for(HashSet<Integer> list: this.listaEquivalencias ){
-			for( Integer i : list)  {
-				System.out.print(i + ",");
-			}
-			System.out.println(";");
-		} this.secondPass();
+		System.out.println(this.conjuntos);
 	}
 
 	public int[] randomColor() {
@@ -95,140 +94,71 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 
 	public void secondPass() {
 		int last = 0;
-		int[] color = null;
-		HashSet<Integer> set = null;
-		for (int l = 1; l < this.wr.getHeight()-1; l++) {
-			for (int c = 1; c < this.wr.getWidth()-1; c++) {
+		int newColor[] = this.randomColor();
+		for (int l = 1; l < this.wr.getHeight() - 1; l++) {
+			for (int c = 1; c < this.wr.getWidth() - 1; c++) {
 
 				this.color = this.wr.getPixel(c, l, this.color);
 				int cValue = this.color[0];
+				if (cValue > 0) {
+					if (this.conjuntos.containsKey(cValue)) {
 
-//				if (cValue > 0) {
-//					set = this.findSet( cValue);
-//					if(!set.isEmpty() && !set.contains(cValue)){
-//						color = this.randomColor();
-//						this.wrOut.setPixel(c, l, color);
-//						set = this.findSet( cValue);
-//					} else {
-//						this.wrOut.setPixel(c, l, color);
-//						
-//					}
-					
-					
-//					set = this.findSet(this.listaEquivalencias, cValue);
-					if (cValue == last) {
-						this.wrOut.setPixel(c, l, color);
+						if (((Integer) this.conjuntos.get(cValue)).equals(last)) {
+							this.marcarPixel(c, l, newColor);
+						
+						}else{
+							this.marcarPixel(c, l, newColor);
+							Object obj = this.conjuntos.get(cValue);
+							last = ((Integer)obj).intValue();
+						}
+							
 					} else {
-						color = this.randomColor();
-						this.wrOut.setPixel(c, l, color);
-						last = cValue;
+						
+						newColor = this.randomColor();
+						this.marcarPixel(c, l, newColor);// -1 random
+
 					}
-					this.wrOut.setPixel(c, l, color);
-					last = cValue;
 				}
 			}
 		}
-
-//	}
-//	public int[] marcasVizinhas(int c, int l){
-//		int [] marcas = new int[4];
-//
-//		if (c > 0) {
-//			this.color = this.wr.getPixel(c - 1, l, this.color);
-//			if (this.color[0] < min && this.color[0] != 0) {
-//				
-//				marcas[0] = this.color[0];
-//			}
-//		}
-//		if (l > 0 && c < this.wr.getWidth() - 1) {
-//			this.color = this.wr.getPixel(c + 1, l - 1, this.color);
-//			if (this.color[0] < min && this.color[0] != 0) {
-//				
-//				min = this.color[0];
-//			}
-//		}
-//		if (l > 0) {
-//			this.color = this.wr.getPixel(c, l - 1, this.color);
-//			if (this.color[0] < min && this.color[0] != 0) {
-//				
-//				min = this.color[0];
-//			}
-//		}
-//		if (c > 0 && l > 0) {
-//			this.color = this.wr.getPixel(c - 1, l - 1, this.color);
-//			if (this.color[0] < min && this.color[0] != 0) {
-//				s
-//				min = this.color[0];
-//			}
-//		}
-//
-//		if (min == Integer.MAX_VALUE)
-//			return 0;
-//		else
-//			return min;
-//	
-//		
-//	}
-	public int checkNeighbors(int x, int y) {
-		int min = Integer.MAX_VALUE;
-
-		HashSet<Integer> set = null;
-
-		if (x > 0) {
-			this.color = this.wr.getPixel(x - 1, y, this.color);
-			if (this.color[0] < min && this.color[0] != 0) {
-				set = this.findSet( this.color[0]);
-				set.add(this.color[0]);
-				min = this.color[0];
-			}
-		}
-		if (y > 0 && x < this.wr.getWidth() - 1) {
-			this.color = this.wr.getPixel(x + 1, y - 1, this.color);
-			if (this.color[0] < min && this.color[0] != 0) {
-				set = this.findSet( this.color[0]);
-				set.add(this.color[0]);
-				min = this.color[0];
-			}
-		}
-		if (y > 0) {
-			this.color = this.wr.getPixel(x, y - 1, this.color);
-			if (this.color[0] < min && this.color[0] != 0) {
-				set = this.findSet(this.color[0]);
-				set.add(this.color[0]);
-				min = this.color[0];
-			}
-		}
-		if (x > 0 && y > 0) {
-			this.color = this.wr.getPixel(x - 1, y - 1, this.color);
-			if (this.color[0] < min && this.color[0] != 0) {
-				set = this.findSet( this.color[0]);
-				set.add(this.color[0]);
-				min = this.color[0];
-			}
-		}
-
-		if (min == Integer.MAX_VALUE)
-			return 0;
-		else
-			return min;
 	}
 
-	public HashSet<Integer> findSet( int num) {
+	public int[] checkNeighbors(int c, int l) {
 
-		if (this.listaEquivalencias.isEmpty()) {
-			HashSet<Integer> set = new HashSet<Integer>();
-			this.listaEquivalencias.add(set);
-			return set;
-		} else {
-			for (int i = 0; i < this.listaEquivalencias.size(); i++) {
-				if (this.listaEquivalencias.get(i).contains(num)) {
-					return this.listaEquivalencias.get(i);
+		int[] neighbors = new int[6];// v1,v2,v3,v4,vmin,nºv>0
+		this.color = this.wr.getPixel(c - 1, l, this.color);
+		neighbors[0] = this.color[0];
+		this.color = this.wr.getPixel(c + 1, l - 1, this.color);
+		neighbors[1] = this.color[0];
+		this.color = this.wr.getPixel(c, l - 1, this.color);
+		neighbors[2] = this.color[0];
+		this.color = this.wr.getPixel(c - 1, l - 1, this.color);
+		neighbors[3] = this.color[0];
+
+		neighbors[4] = this.min(neighbors);
+
+		neighbors[5] = this.numNeighbors(neighbors);
+		return neighbors;
+	}
+
+	public int numNeighbors(int[] k) {
+		HashSet<Integer> set = new HashSet<Integer>();
+		for (int i = 0; i < 4; i++) {
+			if (k[i] > 0)
+				set.add(k[i]);
+		}
+		return set.size();
+	}
+
+	public int min(int[] k) {
+		int min = Integer.MAX_VALUE;
+		for (int i : k)
+			if (i > 0) {
+				if (i < min) {
+					min = i;
 				}
 			}
-		}
-		HashSet<Integer> set = new HashSet<Integer>();
-		this.listaEquivalencias.add(set);
-		return set;
+		return min;
 	}
 
 }
