@@ -51,23 +51,27 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 	}
 
 	public void adicionaConjunto(int[] marcas) {
-		HashSet<Integer> set = this.findSet(marcas[4]);
-		
+		HashSet<Integer> set = null;
+		for (int i = 0; i < 4; i++) {
+			set = this.findSet(marcas[4]);
+			if (set != null)
+				i = 4;
+		}
 		if (set == null) {
 			set = new HashSet<Integer>();
-			
-			set.add(marcas[4]);
+
+			set.add(marcas[4]); // indice 4 menor vizinho
 			this.listaEquivalencias.add(set);
 			this.adicionaConjunto(marcas);
 
-		}
-		else {
-			for (int i = 0; i < 4; i++) {
-				if(marcas[i]>0)
-				set.add(marcas[i]);
+		} else {
+			for (int k = 0; k < 4; k++) {
+				if (marcas[k] > 0)
+					set.add(marcas[k]);
 			}
-			
+
 		}
+		// System.out.println(set);
 
 	}
 
@@ -91,19 +95,21 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 					{
 						this.marcarPixel(c, l, this.nextLable);
 						this.nextLable++;
+						System.out.println(this.nextLable);
 
 					} else { // com vizinhos
 
-						if (vizinhos[5] == 1)
+						if (vizinhos[5] == 1) {
 							this.marcarPixel(c, l, vizinhos[4]);// vizinhos[4]=
-																// marca mais
-																// baixa
-
+							// this.adicionaConjunto(vizinhos); // marca mais
+							// baixa
+						}
 						if (vizinhos[5] > 1) {
 							this.marcarPixel(c, l, vizinhos[4]);// vizinhos[4]=
 																// marca mais
 																// baixa
 							this.adicionaConjunto(vizinhos);
+//							this.merge();
 						}
 					}
 				} else { // qnd preto fica preto na imagem de saida
@@ -114,7 +120,21 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 			// System.out.println("//");
 
 		}
-		 System.out.print("ok"+this.listaEquivalencias);
+		// System.out.print("ok" + this.listaEquivalencias);
+	}
+
+	public void merge() {
+		for (HashSet<Integer> set : this.listaEquivalencias) {
+			for (HashSet<Integer> set1 : this.listaEquivalencias) {
+				for (Integer i : set) {
+					if (!set.equals(set1)) {
+						if (set1.contains(i)) {
+							set1.addAll(set);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	public int[] randomColor() {
@@ -128,32 +148,46 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 	}
 
 	public void secondPass() {
+		this.merge();
+		System.out.println(this.listaEquivalencias);
 		int newColor[] = this.randomColor();
 		HashMap<Integer, int[]> color = new HashMap<Integer, int[]>();
-
+		int cor[] = this.randomColor();
+		for (HashSet<Integer> set : this.listaEquivalencias) {
+			cor = this.randomColor();
+			for (Integer i : set) {
+				color.put(i, cor);
+			}
+		}
 		for (int l = 1; l < this.wr.getHeight() - 1; l++) {
 			for (int c = 1; c < this.wr.getWidth() - 1; c++) {
 
 				this.color = this.wr.getPixel(c, l, this.color);
 				int cValue = this.color[0];
 				if (cValue > 0) {
-
-					if (this.conjuntos.containsKey(cValue)) {
-						newColor = color.get(this.conjuntos.get(cValue));
-						color.put(cValue, newColor);
-						this.marcarPixel(c, l, newColor);
+					if (color.containsKey(cValue)) {
+						this.marcarPixel(c, l, color.get(cValue));
+					} else {
+						color.put(cValue, this.randomColor());
+						this.marcarPixel(c, l, color.get(cValue));
 					}
 
-					else {
-						if (color.containsKey(cValue)) {
-							this.marcarPixel(c, l, color.get(cValue));
-
-						} else {
-							newColor = this.randomColor();
-							color.put(cValue, newColor);
-							this.marcarPixel(c, l, newColor);
-						}
-					}
+					// if (this.conjuntos.containsKey(cValue)) {
+					// newColor = color.get(this.conjuntos.get(cValue));
+					// color.put(cValue, newColor);
+					// this.marcarPixel(c, l, newColor);
+					// }
+					//
+					// else {
+					// if (color.containsKey(cValue)) {
+					// this.marcarPixel(c, l, color.get(cValue));
+					//
+					// } else {
+					// newColor = this.randomColor();
+					// color.put(cValue, newColor);
+					// this.marcarPixel(c, l, newColor);
+					// }
+					// }
 
 				}
 			}
@@ -164,13 +198,13 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 	public int[] checkNeighbors(int c, int l) {
 
 		int[] neighbors = new int[6];// v1,v2,v3,v4,vmin,nºv>0
-		this.color   = this.wr.getPixel(c - 1, l, this.color);
+		this.color = this.wr.getPixel(c - 1, l, this.color);
 		neighbors[0] = this.color[0];
-		this.color   = this.wr.getPixel(c + 1, l - 1, this.color);
+		this.color = this.wr.getPixel(c + 1, l - 1, this.color);
 		neighbors[1] = this.color[0];
-		this.color   = this.wr.getPixel(c, l - 1, this.color);
+		this.color = this.wr.getPixel(c, l - 1, this.color);
 		neighbors[2] = this.color[0];
-		this.color   = this.wr.getPixel(c - 1, l - 1, this.color);
+		this.color = this.wr.getPixel(c - 1, l - 1, this.color);
 		neighbors[3] = this.color[0];
 
 		neighbors[4] = this.min(neighbors);
