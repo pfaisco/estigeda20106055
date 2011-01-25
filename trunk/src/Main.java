@@ -19,9 +19,9 @@ public class Main {
 			
 			ImageOperations img = new ImageOperations();
 			img.open("C:\\Users\\Pedro\\Downloads\\eda\\ana.jpg");
-			img.binarization(240);
+			img.binarization(150);
 
-			TwoPassesConnectedComponents c = new TwoPassesConnectedComponents(img.wRast);
+			TowPassesCComponentes c = new TowPassesCComponentes(img.wRast);
 			
 			double tempo = System.nanoTime();
 			c.run();
@@ -29,7 +29,7 @@ public class Main {
 			System.out.println(tempo*0.000000001+" segundos");
 			
 			img.wRast = c.wrOut;
-			img.save("C:\\Users\\Pedro\\Downloads\\eda\\ana_meu_out.bmp");
+			img.save("C:\\Users\\Pedro\\Downloads\\eda\\ana_out.bmp");
 		
 			
 

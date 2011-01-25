@@ -4,6 +4,7 @@ import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Random;
 
 public class TwoPassesConnectedComponents extends ConnectedComponents {
@@ -13,6 +14,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 	private final int background = 0x00;
 	private ArrayList<HashSet<Integer>> listaEquivalencias;
 	private int nextLable;
+	private LinkedList<HashSet<Integer>> equivalentes;
 
 	public TwoPassesConnectedComponents(WritableRaster wr) {
 		this.wr = wr;
@@ -20,9 +22,10 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 		this.wrOut = wr;
 		this.nextLable = 1;
 		this.listaEquivalencias = new ArrayList<HashSet<Integer>>();
-
+		this.equivalentes = new LinkedList<HashSet<Integer>>();
 	}
-	public void run(){
+
+	public void run() {
 		this.firstPass();
 		this.secondPass();
 	}
@@ -46,8 +49,14 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 				return set;
 			}
 		}
-		return null;
+		return this.makeSet(marca);
 
+	}
+
+	public HashSet<Integer> makeSet(int marca) {
+		HashSet<Integer> novo = new HashSet<Integer>();
+		this.listaEquivalencias.add(novo);
+		return novo;
 	}
 
 	public void adicionaConjunto(int[] marcas) {
@@ -55,25 +64,41 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 		for (int i = 0; i < 4; i++) {
 			if (marcas[i] > 0) {
 				set = this.findSet(marcas[i]);
-				if (set != null)
-					i = 4;
+				// if (set != null)
+				// i = 4;
 			}
 		}
-		if (set == null) {
-			set = new HashSet<Integer>();
-
-			set.add(marcas[4]); // indice 4 menor vizinho
-			this.listaEquivalencias.add(set);
-			this.adicionaConjunto(marcas);
-
-		} else {
-			for (int k = 0; k < 4; k++) {
-				if (marcas[k] > 0)
-					set.add(marcas[k]);
-			}
-
+		// // if (set == null) {
+		// // set = new HashSet<Integer>();
+		//
+		// set.add(marcas[4]); // indice 4 menor vizinho
+		// // this.listaEquivalencias.add(set);
+		// this.adicionaConjunto(marcas);
+		//
+		// } else {
+		for (int k = 0; k < 4; k++) {
+			if (marcas[k] > 0)
+				set.add(marcas[k]);
 		}
 
+		// }
+
+	}
+	public boolean sameComponent(int x, int y){
+		return this.findSet(x).equals(this.findSet(y));
+	}
+	public void union(int x, int y){
+		HashSet<Integer> set1 = null;
+		HashSet<Integer> set2 = null;
+		
+		set1 = this.findSet(x);
+		this.listaEquivalencias.remove(set1);
+		set2 = this.findSet(y);
+		this.listaEquivalencias.remove(set2);
+		set1.addAll(set2);
+		this.equivalentes.add(set1);
+		
+		
 	}
 
 	public void firstPass() {
@@ -102,12 +127,13 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 				} else { // qnd preto fica preto na imagem de saida
 					this.marcarPixel(c, l, this.background);
 				}
+
 			}
 		}
 	}
 
 	public void merge() {
-		
+
 		for (HashSet<Integer> set : this.listaEquivalencias) {
 			for (HashSet<Integer> set1 : this.listaEquivalencias) {
 				for (Integer i : set1) {
@@ -128,14 +154,14 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 
 	public void removeEmpty() {
 		ArrayList<HashSet<Integer>> lstTemp = new ArrayList<HashSet<Integer>>();
-		
+
 		for (HashSet<Integer> set : this.listaEquivalencias) {
 			if (!set.isEmpty()) {
 				lstTemp.add(set);
 			}
 		}
 		this.listaEquivalencias = lstTemp;
-	
+
 	}
 
 	public int[] randomColor() {
@@ -169,6 +195,7 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 						this.marcarPixel(c, l, color.get(cValue));
 					} else {
 						color.put(cValue, this.randomColor());
+						/*****/
 						this.marcarPixel(c, l, color.get(cValue));
 					}
 				}
