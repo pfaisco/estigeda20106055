@@ -12,7 +12,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-
+/**Pedro Faisco
+*Algum codigo reaproveitado de trablho de P2 do ano passado
+*/
 @SuppressWarnings("serial")
 public class Main extends JFrame {
 
