@@ -4,17 +4,16 @@ import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Random;
 
-public class TwoPassesConnectedComponents extends ConnectedComponents {
+public class TwoPassesConnectedComponents {
 	private WritableRaster wr;
 	public WritableRaster wrOut;
 	private int[] color;
 	private final int background = 0x00;
 	private ArrayList<HashSet<Integer>> listaEquivalencias;
 	private int nextLable;
-	private LinkedList<HashSet<Integer>> equivalentes;
+
 
 	public TwoPassesConnectedComponents(WritableRaster wr) {
 		this.wr = wr;
@@ -22,7 +21,6 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 		this.wrOut = wr;
 		this.nextLable = 1;
 		this.listaEquivalencias = new ArrayList<HashSet<Integer>>();
-		this.equivalentes = new LinkedList<HashSet<Integer>>();
 	}
 
 	public void run() {
@@ -35,12 +33,10 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 	}
 
 	public void marcarPixel(int c, int l, int marca) {
-
 		this.color[0] = marca;
 		this.color[1] = marca;
 		this.color[2] = marca;
 		this.wrOut.setPixel(c, l, this.color);
-
 	}
 
 	public HashSet<Integer> findSet(int marca) {
@@ -49,56 +45,35 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 				return set;
 			}
 		}
-		return this.makeSet(marca);
-
+		return null;
 	}
 
 	public HashSet<Integer> makeSet(int marca) {
 		HashSet<Integer> novo = new HashSet<Integer>();
+		novo.add(marca);
 		this.listaEquivalencias.add(novo);
 		return novo;
 	}
 
-	public void adicionaConjunto(int[] marcas) {
-		HashSet<Integer> set = null;
-		for (int i = 0; i < 4; i++) {
-			if (marcas[i] > 0) {
-				set = this.findSet(marcas[i]);
-				// if (set != null)
-				// i = 4;
-			}
-		}
-		// // if (set == null) {
-		// // set = new HashSet<Integer>();
-		//
-		// set.add(marcas[4]); // indice 4 menor vizinho
-		// // this.listaEquivalencias.add(set);
-		// this.adicionaConjunto(marcas);
-		//
-		// } else {
-		for (int k = 0; k < 4; k++) {
-			if (marcas[k] > 0)
-				set.add(marcas[k]);
-		}
-
-		// }
-
-	}
-	public boolean sameComponent(int x, int y){
+	public boolean sameComponent(int x, int y) {
 		return this.findSet(x).equals(this.findSet(y));
 	}
-	public void union(int x, int y){
+
+	public void union(int x, int y) {
+		if(!this.sameComponent(x, y)){
 		HashSet<Integer> set1 = null;
 		HashSet<Integer> set2 = null;
 		
 		set1 = this.findSet(x);
-		this.listaEquivalencias.remove(set1);
+		this.listaEquivalencias.remove(this.findSet(x));
+		
 		set2 = this.findSet(y);
-		this.listaEquivalencias.remove(set2);
+		this.listaEquivalencias.remove(this.findSet(y));
+		
 		set1.addAll(set2);
-		this.equivalentes.add(set1);
-		
-		
+		this.listaEquivalencias.add(set1);
+		}
+
 	}
 
 	public void firstPass() {
@@ -106,62 +81,59 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 		for (int l = 1; l < this.wr.getHeight() - 1; l++) {
 			for (int c = 1; c < this.wr.getWidth() - 1; c++) {
 				this.color = this.wr.getPixel(c, l, this.color);
-				int cValue = this.color[0]; // img mono cromatica rgb sao iguais
-				int[] vizinhos = this.checkNeighbors(c, l);
+				int cValue = this.color[0]; 
+				HashSet<Integer> vizinhos = this.checkNeighbors(c, l);
 
 				if (cValue > this.background) {
-					if (vizinhos[5] < 1) // vizinhos[5] = numero de vizinhos
-											// maior q zero
-					{
+					if (vizinhos.size() < 1) {
 						this.marcarPixel(c, l, this.nextLable);
+						this.makeSet(this.nextLable);
 						this.nextLable++;
-					} else { // com vizinhos
-						if (vizinhos[5] == 1) {
-							this.marcarPixel(c, l, vizinhos[4]);// vizinhos[4]=
+					}  
+						if (vizinhos.size() == 1) {
+							this.marcarPixel(c, l, this.min(vizinhos));
 						}
-						if (vizinhos[5] > 1) {
-							this.marcarPixel(c, l, vizinhos[4]);// vizinhos[4]=
-							this.adicionaConjunto(vizinhos);
-						}
-					}
-				} else { // qnd preto fica preto na imagem de saida
+						if (vizinhos.size() > 1) {
+							this.marcarPixel(c, l, this.min(vizinhos));
+							for (Integer i : vizinhos) {
+								this.union(this.min(vizinhos), i);
+							}
+						}				
+				} else { 
 					this.marcarPixel(c, l, this.background);
 				}
-
-			}
-		}
+			}	
+		}		
 	}
 
-	public void merge() {
+	public void secondPass() {
+		// this.merge();
+		HashMap<Integer, int[]> color = new HashMap<Integer, int[]>();
+		int cor[] = null;
+		for(int i = 1 ; i<this.nextLable;i++){
+			HashSet<Integer> set = this.findSet(i);
+			cor = this.randomColor();
+			for (Integer j : set) {
+				if(!color.containsKey(i))
+					color.put(j, cor);
+			}
+		}
+		for (int l = 1; l < this.wr.getHeight() - 1; l++) {
+			for (int c = 1; c < this.wr.getWidth() - 1; c++) {
 
-		for (HashSet<Integer> set : this.listaEquivalencias) {
-			for (HashSet<Integer> set1 : this.listaEquivalencias) {
-				for (Integer i : set1) {
+				this.color = this.wr.getPixel(c, l, this.color);
+				int cValue = this.color[0];
+				if (cValue > 0) {
 
-					if (!set.equals(set1) || set.isEmpty()) {
-						if (set.contains(i)) {
-							set.addAll(set1);
-							set1.clear();
-							break;
-						}
+					if (color.containsKey(cValue)) {
+						this.marcarPixel(c, l, color.get(cValue));
+					} else {
+						color.put(cValue, this.randomColor());
+						this.marcarPixel(c, l, color.get(cValue));
 					}
 				}
 			}
 		}
-
-		this.removeEmpty();
-	}
-
-	public void removeEmpty() {
-		ArrayList<HashSet<Integer>> lstTemp = new ArrayList<HashSet<Integer>>();
-
-		for (HashSet<Integer> set : this.listaEquivalencias) {
-			if (!set.isEmpty()) {
-				lstTemp.add(set);
-			}
-		}
-		this.listaEquivalencias = lstTemp;
-
 	}
 
 	public int[] randomColor() {
@@ -174,69 +146,29 @@ public class TwoPassesConnectedComponents extends ConnectedComponents {
 		return color;
 	}
 
-	public void secondPass() {
-		this.merge();
-		HashMap<Integer, int[]> color = new HashMap<Integer, int[]>();
-		int cor[] = null;
-
-		for (HashSet<Integer> set : this.listaEquivalencias) {
-			cor = this.randomColor();
-			for (Integer i : set) {
-				color.put(i, cor);
-			}
-		}
-		for (int l = 1; l < this.wr.getHeight() - 1; l++) {
-			for (int c = 1; c < this.wr.getWidth() - 1; c++) {
-
-				this.color = this.wr.getPixel(c, l, this.color);
-				int cValue = this.color[0];
-				if (cValue > 0) {
-					if (color.containsKey(cValue)) {
-						this.marcarPixel(c, l, color.get(cValue));
-					} else {
-						color.put(cValue, this.randomColor());
-						/*****/
-						this.marcarPixel(c, l, color.get(cValue));
-					}
-				}
-			}
-		}
-	}
-
-	public int[] checkNeighbors(int c, int l) {
-
-		int[] neighbors = new int[6];// v1,v2,v3,v4,vmin,nºv>0
-		this.color = this.wr.getPixel(c - 1, l, this.color);
-		neighbors[0] = this.color[0];
-		this.color = this.wr.getPixel(c + 1, l - 1, this.color);
-		neighbors[1] = this.color[0];
-		this.color = this.wr.getPixel(c, l - 1, this.color);
-		neighbors[2] = this.color[0];
-		this.color = this.wr.getPixel(c - 1, l - 1, this.color);
-		neighbors[3] = this.color[0];
-
-		neighbors[4] = this.min(neighbors);
-
-		neighbors[5] = this.numNeighbors(neighbors);
-		return neighbors;
-	}
-
-	public int numNeighbors(int[] k) {
+	public HashSet<Integer> checkNeighbors(int c, int l) {
 		HashSet<Integer> set = new HashSet<Integer>();
-		for (int i = 0; i < 4; i++) {
-			if (k[i] > 0)
-				set.add(k[i]);
-		}
-		return set.size();
+		this.color = this.wr.getPixel(c - 1, l, this.color);
+		if (this.color[0] > 0)
+			set.add(this.color[0]);
+		this.color = this.wr.getPixel(c + 1, l - 1, this.color);
+		if (this.color[0] > 0)
+			set.add(this.color[0]);
+		this.color = this.wr.getPixel(c, l - 1, this.color);
+		if (this.color[0] > 0)
+			set.add(this.color[0]);
+		this.color = this.wr.getPixel(c - 1, l - 1, this.color);
+		if (this.color[0] > 0)
+			set.add(this.color[0]);
+
+		return set;
 	}
 
-	public int min(int[] k) {
+	public int min(HashSet<Integer> set) {
 		int min = Integer.MAX_VALUE;
-		for (int i : k)
-			if (i > 0) {
-				if (i < min) {
-					min = i;
-				}
+		for (int i : set)
+			if (i < min) {
+				min = i;
 			}
 		return min;
 	}
